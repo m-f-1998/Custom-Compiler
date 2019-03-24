@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 class Parser {
 
 	private funcFLEX l;
@@ -51,8 +50,10 @@ class Parser {
 
 	private List<Command> Commands() throws Exception {
 		final List<Command> cmds = new ArrayList<Command>();
+		if (symb == funcFLEX.FuncFLEXTokens.SEMI) {
+			lex();
+		}
 		cmds.add(Command());
-		lex();
 		if (symb == funcFLEX.FuncFLEXTokens.EOF)
 			advance(funcFLEX.FuncFLEXTokens.EOF, "END OF FILE EXPECTED");
 		else
@@ -66,11 +67,10 @@ class Parser {
 		else if (symb == funcFLEX.FuncFLEXTokens.METHOD) {
 			currentBlocks.add(symb);
 			return new NewMethod(Method()); // New Method
-		} else if ((symb == funcFLEX.FuncFLEXTokens.ENDMETHOD && currentBlocks.get(currentBlocks.size() - 1) == funcFLEX.FuncFLEXTokens.METHOD)
-				|| (symb == funcFLEX.FuncFLEXTokens.ENDIF && currentBlocks.get(currentBlocks.size() - 1) == funcFLEX.FuncFLEXTokens.IF)
-				|| (symb == funcFLEX.FuncFLEXTokens.ENDWHILE && currentBlocks.get(currentBlocks.size() - 1) == funcFLEX.FuncFLEXTokens.WHILE)) {
+		} else if ((symb == funcFLEX.FuncFLEXTokens.ENDMETHOD && currentBlocks.get(currentBlocks.size() - 1) == funcFLEX.FuncFLEXTokens.METHOD)) {
 			final IdentExp e = new IdentExp(getStr());
 			advance(symb, "END OF SECTION EXPECTED");
+			lex();
 			currentBlocks.remove(currentBlocks.size() - 1);
 			return new PrintEndCmd(e);
 		} else if (symb == funcFLEX.FuncFLEXTokens.IF) {
@@ -97,38 +97,83 @@ class Parser {
 	private Command ReturnCommand() throws Exception {
 		final Exp e = Exp();
 		lex();
-		return new ReturnCmd(e, Command());
+		return new ReturnCmd(e);
 	}
 
 	private Command AssignCommand() throws Exception {
 		final Exp title = Exp();
 		advance(funcFLEX.FuncFLEXTokens.ASSIGN, "ASSIGN MUST BE FOUND IN ASSIGN BLOCK");
 		final Exp rTitle = Exp();
+		lex();
 		return new AssignCmd(title, rTitle);
 	}
 
 	private Command IfCommand() throws Exception {
 		final Exp cond = CondExp();
 		advance(funcFLEX.FuncFLEXTokens.THEN, "THEN MUST BE FOUND IF ASSIGN BLOCK");
+		ArrayList<Command> block = new ArrayList<Command>();
 		final Command i = Command();
-		lex();
-		if (symb == funcFLEX.FuncFLEXTokens.ELSE) {
+		if (symb == funcFLEX.FuncFLEXTokens.SEMI)
 			lex();
-			return new IfCmd(cond, i, Command());
+		block.add(i);
+		while (symb != funcFLEX.FuncFLEXTokens.ENDIF && symb != funcFLEX.FuncFLEXTokens.ELSE) {
+			final Command newCmd = Command();
+			if (symb == funcFLEX.FuncFLEXTokens.SEMI)
+				lex();
+			block.add(newCmd);
 		}
-		return new IfCmd(cond, i, null);
+		if (symb == funcFLEX.FuncFLEXTokens.ELSE) {
+			ArrayList<Command> block2 = new ArrayList<Command>();
+			lex();
+			final Command i2 = Command();
+			if (symb == funcFLEX.FuncFLEXTokens.SEMI)
+				lex();
+			block2.add(i2);
+			while (symb != funcFLEX.FuncFLEXTokens.ENDIF) {
+				final Command newCmd2 = Command();
+				if (symb == funcFLEX.FuncFLEXTokens.SEMI)
+					lex();
+				block2.add(newCmd2);
+			}
+			final IdentExp e = new IdentExp(getStr());
+			advance(symb, "END OF SECTION EXPECTED");
+			lex();
+			currentBlocks.remove(currentBlocks.size() - 1);
+			Command end = new PrintEndCmd(e);
+			return new IfCmd(cond, block, block2, end);
+		} 
+		final IdentExp e = new IdentExp(getStr());
+		advance(symb, "END OF SECTION EXPECTED");
+		currentBlocks.remove(currentBlocks.size() - 1);
+		Command end = new PrintEndCmd(e);
+		return new IfCmd(cond, block, null, end);
 	}
 
 	private Command WhileCommand() throws Exception {
 		final Exp cond = CondExp();
 		advance(funcFLEX.FuncFLEXTokens.BEGIN, "BEGIN MUST BE FOUND IN WHILE BLOCK");
+		ArrayList<Command> block = new ArrayList<Command>();
 		final Command cmd = Command();
-		return new WhileCmd(cond, cmd);
+		if (symb == funcFLEX.FuncFLEXTokens.SEMI)
+			lex();
+		block.add(cmd);
+		while (symb != funcFLEX.FuncFLEXTokens.ENDWHILE) {
+			final Command newCmd = Command();
+			if (symb != funcFLEX.FuncFLEXTokens.ENDWHILE && symb == funcFLEX.FuncFLEXTokens.SEMI)
+				lex();
+			block.add(newCmd);
+		}
+		final IdentExp e = new IdentExp(getStr());
+		advance(symb, "END OF SECTION EXPECTED");
+		currentBlocks.remove(currentBlocks.size() - 1);
+		Command end = new PrintEndCmd(e);
+		return new WhileCmd(cond, block, end);
 	}
 
 	private Command InputCommand() throws Exception {
 		final String name = getStr();
 		advance(funcFLEX.FuncFLEXTokens.ID, "ID MUST BE FOUND IN READ BLOCK");
+		lex();
 		return new InputCmd(name);
 	}
 

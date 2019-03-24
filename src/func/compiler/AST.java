@@ -1,5 +1,6 @@
 package func.compiler;
 
+import java.util.ArrayList;
 import java.util.List;
 
 interface ASTVisitor {
@@ -105,11 +106,9 @@ class PrintEndCmd extends Command implements ASTElement {
 
 class ReturnCmd extends Command implements ASTElement {
 	Exp e;
-	Command c;
 
-	public ReturnCmd(Exp e, Command c) {
+	public ReturnCmd(Exp e) {
 		this.e = e;
-		this.c = c;
 	}
 
 	public void accept(ASTVisitor visitor) throws Exception {
@@ -132,12 +131,14 @@ class AssignCmd extends Command implements ASTElement {
 
 class IfCmd extends Command implements ASTElement {
 	Exp cond;
-	Command cmd1, cmd2;
+	ArrayList<Command> cmd1, cmd2;
+	Command end;
 
-	public IfCmd(Exp cond, Command cmd1, Command cmd2) {
+	public IfCmd(Exp cond, ArrayList<Command> cmd1, ArrayList<Command> cmd2, Command end) {
 		this.cond = cond;
 		this.cmd1 = cmd1;
 		this.cmd2 = cmd2;
+		this.end = end;
 	}
 
 	public void accept(ASTVisitor visitor) throws Exception {
@@ -147,11 +148,13 @@ class IfCmd extends Command implements ASTElement {
 
 class WhileCmd extends Command implements ASTElement {
 	Exp cond;
-	Command c;
-
-	public WhileCmd(Exp cond2, Command cmd) {
-		this.cond = cond2;
-		this.c = cmd;
+	ArrayList<Command> b;
+	Command end;
+	
+	public WhileCmd(Exp conditional, ArrayList<Command> block, Command end) {
+		this.cond = conditional;
+		this.b = block;
+		this.end = end;
 	}
 
 	public void accept(ASTVisitor visitor) throws Exception {

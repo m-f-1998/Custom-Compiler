@@ -21,15 +21,16 @@ class ASTPrinter implements ASTVisitor {
 			e.accept(this);
 			System.out.print(e != prog.p.get(prog.p.size() - 1) ? ", " : ")");
 		}
-		if (!prog.v.isEmpty())
-			System.out.print(" VARS ");
-		for (Exp e : prog.v) {
-			e.accept(this);
-			if (e != prog.v.get(prog.v.size() - 1))
-				System.out.print(", ");
-			else
-				System.out.print("\n");
+		if (prog.v != null) {
+			if (!prog.v.isEmpty())
+				System.out.print(" VARS ");
+			for (Exp e : prog.v) {
+				e.accept(this);
+				if (e != prog.v.get(prog.v.size() - 1))
+					System.out.print(", ");
+			}
 		}
+		System.out.print("\n");
 		System.out.print("BEGIN\n");
 		indent = indent + 2;
 		for (Command d : prog.c)
@@ -58,7 +59,6 @@ class ASTPrinter implements ASTVisitor {
 		System.out.print("RETURN ");
 		cmd.e.accept(this);
 		System.out.println(";");
-		cmd.c.accept(this);
 	}
 
 	@Override
@@ -76,7 +76,10 @@ class ASTPrinter implements ASTVisitor {
 		printIndent(0);
 		System.out.println("BEGIN");
 		indent = indent + 2;
-		cmd.c.accept(this);
+		for (Command c : cmd.b) {
+			c.accept(this);
+		}
+		cmd.end.accept(this);
 	}
 
 	@Override
@@ -86,13 +89,18 @@ class ASTPrinter implements ASTVisitor {
 		cmd.cond.accept(this);
 		System.out.println(" THEN");
 		indent = indent + 2;
-		cmd.cmd1.accept(this);
+		for (Command c : cmd.cmd1) {
+			c.accept(this);
+		}
 		if (cmd.cmd2 != null) {
 			printIndent(-2);
 			System.out.println("ELSE");
 			indent = indent + 2;
-			cmd.cmd1.accept(this);
+			for (Command c : cmd.cmd2) {
+				c.accept(this);
+			}
 		}
+		cmd.end.accept(this);
 	}
 
 	@Override

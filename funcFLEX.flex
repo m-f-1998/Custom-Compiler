@@ -33,9 +33,11 @@ IDENT = [a-zA-Z][A-Za-z0-9]*
 
 "LESSEQ"  { return FuncFLEXTokens.LESSEQ;}
 "lessEq"  { return FuncFLEXTokens.LESSEQ;}
+"lesseq"  { return FuncFLEXTokens.LESSEQ;}
 
 "NEQ"  { return FuncFLEXTokens.NEQ;}
 "nEq"  { return FuncFLEXTokens.NEQ;}
+"neq"  { return FuncFLEXTokens.LESSEQ;}
 
 "PLUS"  {return FuncFLEXTokens.PLUS;}
 "plus"  {return FuncFLEXTokens.PLUS;}
